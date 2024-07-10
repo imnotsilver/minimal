@@ -9,20 +9,18 @@ const difficultyButtons = document.querySelectorAll('.difficultyButton');
 const finalScore = document.getElementById('finalScore');
 const retryButton = document.getElementById('retryButton');
 const backToMenuButton = document.getElementById('backToMenuButton');
+const playerGif = document.getElementById('playerGif');
 
 let player = { x: 225, y: 425, width: 50, height: 50 };
 let objects = [];
 let powerUps = [];
 let gameInterval;
-let powerUpInterval;
 let isGameOver = false;
 let score = 0;
 let difficulty = 'normal';
 let spawnRate;
 let objectSpeed;
 let keys = {};
-let speedBoostActive = false;
-let shieldActive = false;
 
 let lastPosition = { x: player.x, y: player.y };
 let trail = [];
@@ -49,7 +47,7 @@ difficultyButtons.forEach(button => {
 
 retryButton.addEventListener('click', () => {
     gameOverScreen.style.display = 'none';
-    startScreen.style.display = 'flex';
+    startGame(); // Restart the game
 });
 
 backToMenuButton.addEventListener('click', () => {
@@ -60,16 +58,37 @@ backToMenuButton.addEventListener('click', () => {
 document.addEventListener('keydown', (event) => keys[event.key] = true);
 document.addEventListener('keyup', (event) => keys[event.key] = false);
 
+function getCanvasOffset() {
+    const rect = canvas.getBoundingClientRect();
+    return { top: rect.top + window.scrollY, left: rect.left + window.scrollX };
+}
+
+function updatePlayerGif() {
+    const offset = getCanvasOffset();
+    playerGif.style.left = (player.x + offset.left) + 'px';
+    playerGif.style.top = (player.y + offset.top) + 'px';
+    playerGif.style.width = player.width + 'px';
+    playerGif.style.height = player.height + 'px';
+
+    // Check the direction of movement
+    if (keys['ArrowLeft']) {
+        playerGif.style.transform = 'scaleX(-1)'; // Flip horizontally
+    } else {
+        playerGif.style.transform = 'scaleX(1)'; // Reset to normal
+    }
+
+    playerGif.style.display = 'block';
+}
+
 function startGame() {
     canvas.style.display = 'block';
+    playerGif.style.display = 'block'; // Show player GIF when the game starts
     player.x = canvas.width / 2 - player.width / 2;
     player.y = canvas.height - player.height - 4;
     objects = [];
     powerUps = [];
     score = 0;
     isGameOver = false;
-    speedBoostActive = false;
-    shieldActive = false;
 
     switch (difficulty) {
         case 'easy':
@@ -91,7 +110,6 @@ function startGame() {
     }
 
     gameInterval = setInterval(gameLoop, 1000 / 60);
-    powerUpInterval = setInterval(spawnPowerUp, 12000); // Spawn a power-up every 15 seconds
 }
 
 function gameLoop() {
@@ -105,51 +123,13 @@ function gameLoop() {
     updateScore();
 }
 
-function drawRoundedRect(x, y, width, height, radius) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-}
-
 function drawPlayer() {
-    if (shieldActive) {
-        ctx.strokeStyle = 'yellow';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-
-    if (speedBoostActive) {
-        drawTrail();
-    }
-
-    ctx.fillStyle = 'blue';
-    drawRoundedRect(player.x, player.y, player.width, player.height, 10); // Adjust the radius as needed
-    ctx.fill();
-}
-
-function drawTrail() {
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    for (let i = 1; i < trail.length; i++) {
-        ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
-        ctx.lineTo(trail[i].x, trail[i].y);
-    }
-    ctx.stroke();
+    // Update the position of the player GIF
+    updatePlayerGif();
 }
 
 function updatePlayerPosition() {
-    let speed = speedBoostActive ? 10 : 5;
+    let speed = 5;
     lastPosition.x = player.x;
     lastPosition.y = player.y;
 
@@ -160,22 +140,8 @@ function updatePlayerPosition() {
         player.x += speed;
     }
 
-    if (speedBoostActive) {
-        if (player.x < lastPosition.x) {
-            // Moving left
-            addTrail(player.x + player.width, player.y + player.height / 2);
-        } else if (player.x > lastPosition.x) {
-            // Moving right
-            addTrail(player.x, player.y + player.height / 2);
-        }
-    }
-}
-
-function addTrail(x, y) {
-    trail.push({ x, y });
-    if (trail.length > 10) {
-        trail.shift();
-    }
+    // Update the player GIF position whenever the player moves
+    updatePlayerGif();
 }
 
 function handleObjects() {
@@ -206,8 +172,11 @@ function drawTriangle(x, y, size) {
 function handlePowerUps() {
     powerUps.forEach((powerUp, index) => {
         powerUp.y += objectSpeed;
-        ctx.fillStyle = powerUp.type === 'speed' ? 'green' : 'yellow';
-        ctx.fillRect(powerUp.x, powerUp.y, powerUp.size, powerUp.size);
+        ctx.fillStyle = 'yellow';
+        ctx.beginPath();
+        ctx.arc(powerUp.x + powerUp.size / 2, powerUp.y + powerUp.size / 2, powerUp.size / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
 
         if (powerUp.y > canvas.height) {
             powerUps.splice(index, 1);
@@ -216,7 +185,8 @@ function handlePowerUps() {
 }
 
 function spawnPowerUp() {
-    const type = Math.random() < 0.5 ? 'speed' : 'shield';
+    // Adjust this function if you want to spawn different types of power-ups
+    const type = 'some_type';
     powerUps.push({ x: Math.random() * canvas.width, y: 0, size: 20, type: type });
 }
 
@@ -228,59 +198,29 @@ function checkCollision() {
             player.y < obj.y + obj.size &&
             player.y + player.height > obj.y
         ) {
-            if (shieldActive) {
-                shieldActive = false; // Use up the shield
-                objects.splice(objects.indexOf(obj), 1); // Remove the object
-            } else {
-                gameOver();
-            }
+            gameOver();
         }
     });
 }
 
 function checkPowerUpCollision() {
     powerUps.forEach((powerUp, index) => {
-        if (
-            player.x < powerUp.x + powerUp.size &&
-            player.x + player.width > powerUp.x &&
-            player.y < powerUp.y + powerUp.size &&
-            player.y + player.height > powerUp.y
-        ) {
-            if (powerUp.type === 'speed') {
-                activateSpeedBoost();
-            } else if (powerUp.type === 'shield') {
-                activateShield();
-            }
-            powerUps.splice(index, 1); // Remove the power-up
-        }
+        // Handle power-up collision here if needed
+        powerUps.splice(index, 1); // Remove the power-up
     });
-}
-
-function activateSpeedBoost() {
-    speedBoostActive = true;
-    setTimeout(() => {
-        speedBoostActive = false;
-    }, 7000); // Speed boost lasts for 7 seconds
-}
-
-function activateShield() {
-    shieldActive = true;
-    setTimeout(() => {
-        shieldActive = false;
-    }, 9000); // Shield lasts for 9 seconds
 }
 
 function updateScore() {
     score += 1;
     ctx.fillStyle = 'white';
     ctx.font = '16px Arial';
-    ctx.fillText('SCORE: ' + score, canvas.width - 490, 25);
+    ctx.fillText('SCORE: ' + score, 10, 25);
 }
 
 function gameOver() {
     clearInterval(gameInterval);
-    clearInterval(powerUpInterval);
     isGameOver = true;
+    playerGif.style.display = 'none'; // Hide player GIF when the game is over
     canvas.style.display = 'none';
     gameOverScreen.style.display = 'flex';
     finalScore.textContent = 'SCORE: ' + score;
