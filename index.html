@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falling Objects Game</title>
+    <title>minimal.</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="startScreen" class="screen">
         <h1 id="gtitle">minimal.</h1>
         <button id="playButton">PLAY GAME</button>
+        <button id="skinButton">SKIN SELECTOR</button>
         <button id="settingsButton">SETTINGS</button>
     </div>
     <div id="difficultyScreen" class="screen" style="display: none;">
@@ -28,6 +29,23 @@
         <button id="retryButton">RETRY</button>
         <button id="backToMenuButton">BACK TO MENU</button>
     </div>
-    <script src="game.js"></script>
+
+    <audio autoplay="" loop="" src="./music_zapsplat_astro_race.mp3"></audio>
+    <img id="playerGif" src="https://media.tenor.com/GZBJyaDeJGQAAAAi/sonic-the-hegdehog-sonic.gif" /> 
+
+    <style>
+        #gameCanvas {
+            position: relative;
+            z-index: 1;
+        }
+    
+        #playerGif {
+            position: absolute;
+            z-index: 2;
+            display: none; /* Initially hidden */
+        }
+    </style>
+
+    <script src="game.js"></script>   
 </body>
 </html>
