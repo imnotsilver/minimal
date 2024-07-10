@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falling Objects Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="startScreen" class="screen">
+        <h1 id="gtitle">minimal.</h1>
+        <button id="playButton">PLAY GAME</button>
+        <button id="settingsButton">SETTINGS</button>
+    </div>
+    <div id="difficultyScreen" class="screen" style="display: none;">
+        <h1>Select Difficulty</h1>
+        <div id="difficultyButtons">
+            <button class="difficultyButton" data-difficulty="easy">EASY</button>
+            <button class="difficultyButton" data-difficulty="normal">NORMAL</button>
+            <button class="difficultyButton" data-difficulty="hard">HARD</button>
+            <button class="difficultyButton" data-difficulty="impossible">ദ്ദി(ᵔᗜᵔ)</button>
+        </div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="gameOverScreen" class="screen" style="display: none;">
+        <h1>how can u be so bad?</h1>
+        <p id="finalScore"></p>
+        <button id="retryButton">RETRY</button>
+        <button id="backToMenuButton">BACK TO MENU</button>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
