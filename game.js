@@ -120,7 +120,7 @@ function startGame() {
     }
 
     clearInterval(powerUpSpawnInterval);
-    powerUpSpawnInterval = setInterval(spawnPowerUp, 5000); // Spawn power-ups every minute
+    powerUpSpawnInterval = setInterval(spawnPowerUp, 15000); // Spawn power-ups every minute
 
     gameInterval = setInterval(gameLoop, 1000 / 60);
 }
