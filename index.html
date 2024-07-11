@@ -33,6 +33,19 @@
     <audio autoplay="" loop="" src="./music_zapsplat_astro_race.mp3"></audio>
     <img id="playerGif" src="https://media.tenor.com/GZBJyaDeJGQAAAAi/sonic-the-hegdehog-sonic.gif" /> 
 
+    <!-- Add this inside the body of your HTML -->
+    <div id="progressContainer" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 70%; height: 15px; background-color: rgb(178, 178, 178);">
+        <div id="progressBar" style="width: 0; height: 100%; background-color: rgb(255, 255, 255);"></div>
+    </div>
+
+    <div id="congratulationsScreen" class="screen" style="display: none;">
+        <h1>Congratulations!</h1>
+        <img id="congratsGif" src="https://media.tenor.com/51t1N6PZjpoAAAAi/sonic-nice.gif" /> 
+        <p>You completed the game!</p>
+        <button id="continueButton">CONTINUE</button>
+    </div>
+
+
     <style>
         #gameCanvas {
             position: relative;
