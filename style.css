@@ -99,3 +99,18 @@ h1 {
 #retryButton {
     margin-bottom: 10px;
 }
+
+#progressContainer {
+    margin-top: 15px;
+    border-radius: 10px;
+}
+
+#progressBar {
+    border-radius: 10px;
+}
+
+#congratsGif {
+    width: 15%;
+    height: auto;
+    margin-bottom: 20px;
+}
