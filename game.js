@@ -11,6 +11,14 @@ const finalScore = document.getElementById('finalScore');
 const retryButton = document.getElementById('retryButton');
 const backToMenuButton = document.getElementById('backToMenuButton');
 const playerGif = document.getElementById('playerGif');
+const progressBar = document.getElementById('progressBar');
+
+let projectiles = []; // Define projectiles separately
+let explosionProjectiles = []; // Define explosion projectiles separately
+
+const continueButton = document.getElementById('continueButton');
+const congratulationsScreen = document.getElementById('congratulationsScreen');
+const progressContainer = document.getElementById('progressContainer');
 
 let player = { x: 225, y: 425, width: 50, height: 50, speed: 5, shielded: false };
 let objects = [];
@@ -24,6 +32,7 @@ let objectSpeed;
 let keys = {};
 let powerUpSpawnInterval;
 let powerUpEffectDuration = 5000; // 5 seconds
+let maxScore = 2500; // Define the maximum score for the game
 
 let lastPosition = { x: player.x, y: player.y };
 
@@ -110,8 +119,8 @@ function startGame() {
             objectSpeed = 5;
             break;
         case 'hard':
-            spawnRate = 0.1;
-            objectSpeed = 7;
+            spawnRate = 0.08;
+            objectSpeed = 6;
             break;
         case 'impossible':
             spawnRate = 5;
@@ -120,7 +129,7 @@ function startGame() {
     }
 
     clearInterval(powerUpSpawnInterval);
-    powerUpSpawnInterval = setInterval(spawnPowerUp, 15000); // Spawn power-ups every minute
+    powerUpSpawnInterval = setInterval(spawnPowerUp, 10000); // Spawn power-ups every minute
 
     gameInterval = setInterval(gameLoop, 1000 / 60);
 }
@@ -131,10 +140,24 @@ function gameLoop() {
     drawPlayer();
     handleObjects();
     handlePowerUps();
+    handleExplosionProjectiles();
     checkCollision();
     checkPowerUpCollision();
     updateScore();
+    updateProgressBar();
+
+    // Check if the game is completed (progress bar reaches 100%)
+    if (score >= maxScore) {
+        showCongratulations();
+    }
 }
+
+// Event listener for continue button on congratulations screen
+continueButton.addEventListener('click', () => {
+    congratulationsScreen.style.display = 'none';
+    startScreen.style.display = 'flex'; // Change to whatever screen you want after completion
+    resetGame(); // Optionally, reset the game state
+});
 
 function drawPlayer() {
     updatePlayerGif();
@@ -143,7 +166,7 @@ function drawPlayer() {
     if (player.shielded) {
         ctx.beginPath();
         ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width / 2 + 10, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.1)'; // Semi-transparent cyan color
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)'; // Semi-transparent cyan color
         ctx.fill();
         ctx.lineWidth = 2;
         ctx.strokeStyle = 'cyan';
@@ -165,30 +188,81 @@ function updatePlayerPosition() {
     updatePlayerGif();
 }
 
+// Updated handleObjects to include new projectile type
 function handleObjects() {
     if (Math.random() < spawnRate) {
-        objects.push({ x: Math.random() * canvas.width, y: 0, size: 20 });
+        if (Math.random() < 0.95) {
+            objects.push({ x: Math.random() * canvas.width, y: 0, size: 20, type: 'normal' });
+        } else {
+            objects.push({ x: Math.random() * canvas.width, y: 0, size: 20, type: 'explosive', exploded: false });
+        }
     }
 
     objects.forEach((obj, index) => {
-        obj.y += objectSpeed;
-        drawTriangle(obj.x, obj.y, obj.size);
+        if (obj.type === 'explosive' && obj.y > canvas.height / 2 && !obj.exploded) {
+            explodeProjectile(obj, index);
+        } else {
+            obj.y += objectSpeed;
+            drawProjectile(obj.x, obj.y, obj.size, obj.type);
 
-        if (obj.y > canvas.height) {
-            objects.splice(index, 1);
+            if (obj.y > canvas.height) {
+                objects.splice(index, 1);
+            }
         }
     });
 }
 
-function drawTriangle(x, y, size) {
-    ctx.fillStyle = 'red';
-    ctx.beginPath();
-    ctx.moveTo(x, y + size);
-    ctx.lineTo(x - size / 2, y);
-    ctx.lineTo(x + size / 2, y);
-    ctx.closePath();
-    ctx.fill();
+// Function to handle exploding projectiles
+function explodeProjectile(obj, index) {
+    obj.exploded = true;
+    objects.splice(index, 1);
+
+    for (let i = 0; i < 5; i++) {
+        const angle = (Math.PI * 2 / 5) * i;
+        explosionProjectiles.push({
+            x: obj.x,
+            y: obj.y,
+            size: 10,
+            speedX: Math.cos(angle) * objectSpeed,
+            speedY: Math.sin(angle) * objectSpeed
+        });
+    }
 }
+
+// Function to handle the new projectiles from the explosion
+function handleExplosionProjectiles() {
+    explosionProjectiles.forEach((proj, index) => {
+        proj.x += proj.speedX;
+        proj.y += proj.speedY;
+        drawProjectile(proj.x, proj.y, proj.size, 'normal');
+
+        if (proj.x < 0 || proj.x > canvas.width || proj.y > canvas.height) {
+            explosionProjectiles.splice(index, 1);
+        }
+    });
+}
+
+// Updated function to draw different types of projectiles
+function drawProjectile(x, y, size, type) {
+    if (type === 'normal') {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.moveTo(x, y + size);
+        ctx.lineTo(x - size / 2, y);
+        ctx.lineTo(x + size / 2, y);
+        ctx.closePath();
+        ctx.fill();
+    } else if (type === 'explosive') {
+        // Draw the explosive projectile as an animated GIF
+        const explosionGif = new Image();
+        explosionGif.src = 'https://media.tenor.com/-pZcpf69_LgAAAAi/tnt-bomb.gif'; // Replace with your actual path
+
+        // Draw the image at the projectile's coordinates
+        ctx.drawImage(explosionGif, x, y, size + 15, size + 15);
+    }
+}
+
+
 
 function handlePowerUps() {
     powerUps.forEach((powerUp, index) => {
@@ -213,12 +287,8 @@ function spawnPowerUp() {
 
 function checkCollision() {
     objects.forEach((obj) => {
-        if (
-            player.x < obj.x + obj.size &&
-            player.x + player.width > obj.x &&
-            player.y < obj.y + obj.size &&
-            player.y + player.height > obj.y
-        ) {
+        if (player.x < obj.x + obj.size && player.x + player.width > obj.x &&
+            player.y < obj.y + obj.size && player.y + player.height > obj.y) {
             if (player.shielded) {
                 player.shielded = false;
                 objects.splice(objects.indexOf(obj), 1);
@@ -227,8 +297,19 @@ function checkCollision() {
             }
         }
     });
-}
 
+    explosionProjectiles.forEach((proj) => {
+        if (player.x < proj.x + proj.size && player.x + player.width > proj.x &&
+            player.y < proj.y + proj.size && player.y + player.height > proj.y) {
+            if (player.shielded) {
+                player.shielded = false;
+                explosionProjectiles.splice(explosionProjectiles.indexOf(proj), 1);
+            } else {
+                gameOver();
+            }
+        }
+    });
+}
 function checkPowerUpCollision() {
     powerUps.forEach((powerUp, index) => {
         if (
@@ -266,12 +347,25 @@ function updateScore() {
     ctx.fillText('SCORE: ' + score, 10, 25);
 }
 
+function updateProgressBar() {
+    const progress = Math.min(score / maxScore, 1); // Calculate the progress as a fraction
+    progressBar.style.width = (progress * 100) + '%'; // Update the progress bar width
+}
+
 function gameOver() {
     clearInterval(gameInterval);
     clearInterval(powerUpSpawnInterval);
     isGameOver = true;
-    playerGif.style.display = 'none';
     canvas.style.display = 'none';
+    playerGif.style.display = 'none';
     gameOverScreen.style.display = 'flex';
-    finalScore.textContent = 'SCORE: ' + score;
+    finalScore.textContent = 'FINAL SCORE: ' + score;
+}
+
+function showCongratulations() {
+    clearInterval(gameInterval);
+    clearInterval(powerUpSpawnInterval);
+    canvas.style.display = 'none';
+    playerGif.style.display = 'none';
+    congratulationsScreen.style.display = 'flex';
 }
